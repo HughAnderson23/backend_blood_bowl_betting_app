@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const authRoutes = require('./routes/auth').router;
 const userRoutes = require('./routes/user');
+const matchRoutes = require('./routes/matches');
 
 const app = express();
 
@@ -11,6 +12,7 @@ app.use(cors());
 
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api/matches', matchRoutes);
 
 mongoose.connect('mongodb+srv://hughabcanderson:K7et92spI7rRhYFf@cluster0.yzt4f.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0');
 

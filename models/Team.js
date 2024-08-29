@@ -1,10 +1,14 @@
 const mongoose = require('mongoose');
 
-const TeamSchema = new mongoose.Schema({
-  name: { type: String, required: true, unique: true },
-  // You can add more fields here, like 'city', 'league', etc., if needed.
+// Define the schema
+const teamSchema = new mongoose.Schema({
+    name: { type: String, required: true },
+    wins: { type: Number, default: 0 },
+    losses: { type: Number, default: 0 }
 });
 
-const Team = mongoose.model('Team', TeamSchema);
+// Create the model using the schema
+const Team = mongoose.model('Team', teamSchema);
 
 module.exports = Team;
+
