@@ -81,6 +81,7 @@ router.post('/lock/:matchId', async (req, res) => {
   });
 
 // Route to resolve a match and calculate winnings
+// POST route to resolve a match
 router.post('/resolve/:matchId', async (req, res) => {
     const { matchId } = req.params;
     const { winningTeamId } = req.body;
@@ -91,20 +92,23 @@ router.post('/resolve/:matchId', async (req, res) => {
             return res.status(404).json({ message: 'Match not found' });
         }
         if (match.isResolved) {
-            return res.status(415).json({ message: 'Match already resolved' });
+            return res.status(400).json({ message: 'Match already resolved' });
         }
 
-        // Resolve the match
-        match.winningTeam = winningTeamId;  // Ensure your Match model supports this property
-        match.isResolved = true;  // You may need to add this property to your model
+        match.winningTeam = winningTeamId;
+        match.isResolved = true;
         await match.save();
 
-        // Update bets associated with this match
-        const bets = await Bet.find({ match: matchId });
-        bets.forEach(async (bet) => {
-            bet.isWin = bet.team.equals(winningTeamId);
-            await bet.save();
-        });
+        const bets = await Bet.find({ match: matchId }).populate('user');
+        await Promise.all(bets.map(async (bet) => {
+            if (bet.team.toString() === winningTeamId.toString()) {
+                bet.isWin = true;
+                const winnings = bet.amount * bet.odds; // Calculate winnings
+                bet.user.skulls += winnings; // Add winnings to user's skulls
+                await bet.user.save(); // Save the updated user
+            }
+            await bet.save(); // Save the updated bet
+        }));
 
         res.status(200).json({ message: 'Match resolved and winnings calculated', match });
     } catch (error) {
@@ -112,6 +116,7 @@ router.post('/resolve/:matchId', async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 });
+
 
 
 module.exports = router;
