@@ -26,7 +26,20 @@ const matchSchema = new mongoose.Schema({
   oddsTeam2: { 
     type: Number,
     required: true,
+  },
+  isLocked: { 
+    type: Boolean,
+    default: false,
+  },
+  winningTeam: { // Stores the ID of the winning team
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Team'
+  },
+  isResolved: {
+    type: Boolean,
+    default: false,
   }
+
 });
 
 const Match = mongoose.model('Match', matchSchema);

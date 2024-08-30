@@ -6,28 +6,34 @@ const Team = require('../models/Team');
 
 // Route to get user's skulls
 router.get('/skulls', authMiddleware, async (req, res) => {
-  try {
-    const user = await User.findById(req.user.id);
-    res.json({ skulls: user.skulls });
-  } catch (error) {
-    res.status(500).send('Server error');
-  }
+    try {
+        // Ensure the user ID is being correctly passed down by the auth middleware
+        if (!req.user || !req.user.id) {
+            console.log('Invalid or missing user information in request:', req.user);
+            return res.status(400).json({ msg: 'Invalid user information. Cannot proceed.' });
+        }
+
+        const user = await User.findById(req.user.id);
+
+        // Check if the user exists in the database
+        if (!user) {
+            console.log('No user found with ID:', req.user.id);
+            return res.status(404).json({ msg: 'User not found' });
+        }
+
+        // Ensure that the user object actually has the 'skulls' property
+        if (user.skulls === undefined) {
+            console.log('Skulls data not found for user:', req.user.id);
+            return res.status(404).json({ msg: 'Skulls data not available for this user' });
+        }
+
+        res.json({ skulls: user.skulls });
+    } catch (error) {
+        console.error('Server error while fetching skulls for user ID:', req.user.id, error);
+        res.status(500).json({ msg: 'Server error', error: error.message });
+    }
 });
 
-router.get('/user', authMiddleware, async (req, res) => {
-    console.log("User ID from token: ", req.user.id); // Log to see if user ID is being passed
-    try {
-      const user = await User.findById(req.user.id).select('-password');
-      console.log("User found: ", user); // Check what user data is being retrieved
-      if (!user) {
-        return res.status(404).json({ msg: 'User not found' });
-      }
-      res.json(user);
-    } catch (err) {
-      console.error("Error in fetching user: ", err);
-      res.status(500).json({ msg: 'Server error' });
-    }
-  });
   
 
 // Route to get available teams

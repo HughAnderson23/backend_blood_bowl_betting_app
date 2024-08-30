@@ -3,6 +3,8 @@ const router = express.Router();
 const Match = require('../models/Match');
 const Team = require('../models/Team'); // Import Team model if needed for fetching stats
 const calculateOdds = require('../utils/oddsCalculator'); // Import the odds calculator
+const Bet = require('../models/Bet'); // Adjust the path as necessary depending on your directory structure
+
 
 // GET existing matches and populate team details
 router.get('/', async (req, res) => {
@@ -16,7 +18,7 @@ router.get('/', async (req, res) => {
 });
 
 // POST new match with odds calculation
-router.post('/matches', async (req, res) => {
+router.post('/', async (req, res) => {
   const { team1Id, team2Id, date, week } = req.body;
   try {
     const team1 = await Team.findById(team1Id);
@@ -59,7 +61,57 @@ router.put('/:matchId', async (req, res) => {
   }
 });
 
+// Route to lock bets for a match
+router.post('/lock/:matchId', async (req, res) => {
+    try {
+      const match = await Match.findById(req.params.matchId);
+      if (!match) {
+        return res.status(404).json({ message: 'Match not found' });
+      }
+      if (match.isLocked) {
+        return res.status(400).json({ message: 'Bets are already locked for this match' });
+      }
+      match.isLocked = true;
+      await match.save();
+      res.status(200).json({ message: 'Bets locked successfully', match });
+    } catch (error) {
+      console.error('Error locking bets:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
 
+// Route to resolve a match and calculate winnings
+router.post('/resolve/:matchId', async (req, res) => {
+    const { matchId } = req.params;
+    const { winningTeamId } = req.body;
+
+    try {
+        const match = await Match.findById(matchId);
+        if (!match) {
+            return res.status(404).json({ message: 'Match not found' });
+        }
+        if (match.isResolved) {
+            return res.status(415).json({ message: 'Match already resolved' });
+        }
+
+        // Resolve the match
+        match.winningTeam = winningTeamId;  // Ensure your Match model supports this property
+        match.isResolved = true;  // You may need to add this property to your model
+        await match.save();
+
+        // Update bets associated with this match
+        const bets = await Bet.find({ match: matchId });
+        bets.forEach(async (bet) => {
+            bet.isWin = bet.team.equals(winningTeamId);
+            await bet.save();
+        });
+
+        res.status(200).json({ message: 'Match resolved and winnings calculated', match });
+    } catch (error) {
+        console.error('Error resolving match:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
 
 
 module.exports = router;

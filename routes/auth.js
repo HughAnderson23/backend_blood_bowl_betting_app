@@ -14,15 +14,28 @@ const authMiddleware = (req, res, next) => {
   }
   try {
     const decoded = jwt.verify(token, 'secret');
-    req.user = decoded.user;
+    req.user = { id: decoded.userId };
     next();
   } catch (err) {
     res.status(401).json({ msg: 'Token is not valid' });
   }
 };
 
-// 
-
+//auth/user 
+router.get('/user', authMiddleware, async (req, res) => {
+  console.log("User ID from token: ", req.user.id); // Log to see if user ID is being passed
+  try {
+    const user = await User.findById(req.user.id).select('-password');
+    console.log("User found: ", user); // Check what user data is being retrieved
+    if (!user) {
+      return res.status(404).json({ msg: 'User not found' });
+    }
+    res.json(user);
+  } catch (err) {
+    console.error("Error in fetching user: ", err);
+    res.status(500).json({ msg: 'Server error' });
+  }
+});
 
 // Register a new user
 router.post('/register', async (req, res) => {
