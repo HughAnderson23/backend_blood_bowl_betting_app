@@ -14,6 +14,22 @@ router.get('/skulls', authMiddleware, async (req, res) => {
   }
 });
 
+router.get('/user', authMiddleware, async (req, res) => {
+    console.log("User ID from token: ", req.user.id); // Log to see if user ID is being passed
+    try {
+      const user = await User.findById(req.user.id).select('-password');
+      console.log("User found: ", user); // Check what user data is being retrieved
+      if (!user) {
+        return res.status(404).json({ msg: 'User not found' });
+      }
+      res.json(user);
+    } catch (err) {
+      console.error("Error in fetching user: ", err);
+      res.status(500).json({ msg: 'Server error' });
+    }
+  });
+  
+
 // Route to get available teams
 router.get('/teams', async (req, res) => {
   try {
