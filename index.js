@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -14,7 +16,9 @@ app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/matches', matchRoutes);
 
-mongoose.connect('mongodb+srv://hughabcanderson:K7et92spI7rRhYFf@cluster0.yzt4f.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0');
+mongoose.connect(process.env.DB_URI)
+  .then(() => console.log("MongoDB connected successfully"))
+  .catch(err => console.error("MongoDB connection error:", err));
 
 app.get('/', (req, res) => {
   res.send('Blood Bowl Betting App API');
